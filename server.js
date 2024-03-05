@@ -2,12 +2,12 @@ const express = require('express');
 const fs = require('fs');
 const cors = require('cors');
 const multer = require('multer');//a middleware to handle a formData object
-const knex = require('knex'); // a query builder
+const knex = require('knex'); // a query builder for databases
 const OpenAI = require('openai');
 const promise =  require('promise');
-const {toFile} = require("openai/uploads") ;
+// const {toFile} = require("openai/uploads") ;
 const axios = require("axios");
-const { Readable } = require('stream'); 
+// const { Readable } = require('stream'); 
 
 
 const db = knex({
@@ -46,7 +46,7 @@ app.post('/signin',(req,res)=>{
 	db.select('*').from('users').where('email',email)
 	 .then(result=> {
 	 	if(result[0].password_hash == req.body.password){
-	 		res.send(result[0]);
+	 		res.status(200).send(result[0]);
 	 	}else{
 	 		res.status(404).send('invalid email or password');
 	 	}
@@ -66,10 +66,6 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 		console.log("file name is:",fileName);
 		//read the recording from disk again(an alternative solution, bc idk how to conver buffer to filelike data form)  
 		const audioFile = fs.createReadStream(fileName);
-
-		// convert Buffer to FileLike 
-		// const audioFile = toFile(req.file.buffer);
-		// const audioFile = Readable.from(req.file.buffer);
 
 		const response = await axios.post(
 			'https://api.openai.com/v1/audio/transcriptions',
@@ -105,7 +101,6 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 			// })
 			// console.log(await response.json());
 	}
-
 		
 	transcribeAudio(req.file.originalname)
 		.then(result=>{
