@@ -9,7 +9,6 @@ const promise =  require('promise');
 const axios = require("axios");
 // const { Readable } = require('stream'); 
 
-
 const db = knex({
   client: 'pg', //postgresql
   connection: {
@@ -42,7 +41,8 @@ app.post('/signup',(req,res)=>{
 
 
 app.post('/signin',(req,res)=>{
-	const email = req.body.email;
+	const email = req.body.email; //for request from axios/fetch
+	console.log(email);
 	db.select('*').from('users').where('email',email)
 	 .then(result=> {
 	 	if(result[0].password_hash == req.body.password){
@@ -59,13 +59,13 @@ app.post('/signin',(req,res)=>{
 app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 
 	async function transcribeAudio(fileName){
-
-		//write user recording to disk 
 		fs.writeFileSync(fileName, req.file.buffer, 'base64',(err) => err && console.error(err));
-
 		console.log("file name is:",fileName);
+
 		//read the recording from disk again(an alternative solution, bc idk how to conver buffer to filelike data form)  
 		const audioFile = fs.createReadStream(fileName);
+
+		const OPENAI_API_KEY = process.env.OPENAI_API_KEY; 
 
 		const response = await axios.post(
 			'https://api.openai.com/v1/audio/transcriptions',
@@ -78,14 +78,14 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 			{
 				headers:{
 					'Content-Type':'multipart/form-data',
-					Authorization:'Bearer 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'
+					Authorization: OPENAI_API_KEY
 				}
 			}
 		)
 
 		console.log(response.data.text);
-
 		return response.data.text;
+
 		//failed using fetch, got error 'Could not parse multipart form'
 		// const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
 			//   method: 'POST',
@@ -108,7 +108,10 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 				data:result
 			})
 		})
-		.catch(()=>res.status(404).send('failed handling audio'))
+		.catch((error)=>{
+			console.log(error);
+			res.status(404).send('failed handling audio');
+		})
 
 
 // 	res.status(200).send('ok'); 
@@ -124,10 +127,8 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 })
 
 
-
-
 app.get('/record',(req,res)=>{
-	console.log('apppppp');
+	console.log('app');
 	res.status(200).send("ok!!!"); 
 })
 
@@ -137,8 +138,4 @@ app.get('/record',(req,res)=>{
 app.listen(3000, ()=> {
   console.log('app is running on port 3000');
   db('users').count('user_id').returning().then(total=>console.log("Total users number:",total[0].count));
-
-// db.select("*").from("users")
-// 	.then(users => console.log(users[0]))
-
 })
