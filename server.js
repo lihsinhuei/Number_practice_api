@@ -59,13 +59,14 @@ app.post('/signin',(req,res)=>{
 app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 
 	async function transcribeAudio(fileName){
+
 		fs.writeFileSync(fileName, req.file.buffer, 'base64',(err) => err && console.error(err));
 		console.log("file name is:",fileName);
 
 		//read the recording from disk again(an alternative solution, bc idk how to conver buffer to filelike data form)  
 		const audioFile = fs.createReadStream(fileName);
 
-		const OPENAI_API_KEY = process.env.OPENAI_API_KEY; 
+		// const OPENAI_API_KEY = process.env.OPENAI_API_KEY; 
 
 		const response = await axios.post(
 			'https://api.openai.com/v1/audio/transcriptions',
@@ -78,13 +79,11 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 			{
 				headers:{
 					'Content-Type':'multipart/form-data',
-					Authorization: OPENAI_API_KEY
+					Authorization: 'Bearer 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'
 				}
 			}
 		)
-
-		console.log(response.data.text);
-		return response.data.text;
+		return response;
 
 		//failed using fetch, got error 'Could not parse multipart form'
 		// const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -103,14 +102,15 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 	}
 		
 	transcribeAudio(req.file.originalname)
-		.then(result=>{
-			res.status(200).send({
-				data:result
+		.then(response=>{
+
+			console.log("You said:",response.data.text);
+			res.status(response.status).send({
+				data:response.data.text  //the transcrip text from OpenAI
 			})
 		})
 		.catch((error)=>{
-			console.log(error);
-			res.status(404).send('failed handling audio');
+			res.status(404).send('unexpected error, failed handling audio');
 		})
 
 
