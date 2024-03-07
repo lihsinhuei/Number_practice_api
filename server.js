@@ -11,6 +11,7 @@ const axios = require("axios");
 require('dotenv').config() //package to access the variables in .env file(process.env)
 
 
+
 const db = knex({
   client: 'pg', //postgresql
   connection: {
@@ -22,12 +23,12 @@ const db = knex({
   }
 });
 
+
+
 const app = express();
 app.use(cors())
 app.use(express.json()); // latest version of expressJS now comes with Body-Parser!
 const upload = multer();
-
-
 
 
 app.post('/signup',(req,res)=>{
@@ -107,11 +108,27 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 	transcribeAudio(req.file.originalname)
 		.then(response=>{
 			console.log("You said:",response.data.text);
+
+			//save data for this questionto DB 
+			db('question')
+			// .returning('challenge_id') 
+			.insert({
+				challenge_id:req.body.challengeID,
+				question_no:req.body.questionNo,
+				given_number:req.body.givenNumber,
+				is_skip:req.body.isSkip,
+				file_name:req.file.originalname,
+				transcribe:response.data.text
+			})
+			.then((result) => res.status(200).send(result[0]))
+			.catch((error)=>console.log("Insert db failed!",error))
+
 			res.status(response.status).send({
 				data:response.data.text  //the transcrip text from OpenAI
 			})
 		})
 		.catch((error)=>{
+			console.log(error.response.status);
 			res.status(404).send('unexpected error, failed handling audio');
 		})
 
@@ -126,6 +143,36 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 //     });
 
 	
+})
+
+
+app.post('/newChallenge',(req,res)=>{
+	db('challenge')
+	 .returning('challenge_id')
+	 .insert({user_id:req.body.userID})
+	 .then((result) => res.status(200).send(result[0]))
+	 .catch((error)=>console.log("Insert db failed!",error))
+})
+
+
+//avoid coding duplication
+app.post('/saveQuestion',(req,res)=>{
+	//save data for this questionto DB 
+	db('question')
+	// .returning('challenge_id') 
+	.insert({
+		challenge_id:req.body.challengeID,
+		question_no:req.body.questionNo,
+		given_number:givenNumber,
+		is_Skip:isSkip,
+		file_name:fileName,
+		transcribe:response.data.text
+	})
+	.then((result) => res.status(200).send(result[0]))
+	.catch((error)=>{
+		console.log("Insert db failed!",error)
+		res.status(404).send("Insert db failed!")
+	})
 })
 
 
