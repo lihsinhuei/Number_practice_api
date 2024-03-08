@@ -88,21 +88,6 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 			}
 		)
 		return response;
-
-		//failed using fetch, got error 'Could not parse multipart form'
-		// const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-			//   method: 'POST',
-			//   // maxBodyLength: Infinity,
-			//   headers: {
-			//     'Authorization': 'Bearer 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',
-			//     'Content-Type': 'multipart/form-data',
-			//   },
-			//   body: {
-			//     file: audioFile,
-			//     model: 'whisper-1',
-			//   }
-			// })
-			// console.log(await response.json());
 	}
 		
 	transcribeAudio(req.file.originalname)
@@ -111,7 +96,6 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 
 			//save data for this questionto DB 
 			db('question')
-			// .returning('challenge_id') 
 			.insert({
 				challenge_id:req.body.challengeID,
 				question_no:req.body.questionNo,
@@ -155,8 +139,8 @@ app.post('/newChallenge',(req,res)=>{
 })
 
 
-//avoid coding duplication
-app.post('/saveQuestion',(req,res)=>{
+//not done yet!!!!don't skip quesions. also need to think about code duplication
+app.post('/skipQuestion',(req,res)=>{
 	//save data for this questionto DB 
 	db('question')
 	// .returning('challenge_id') 
@@ -164,9 +148,9 @@ app.post('/saveQuestion',(req,res)=>{
 		challenge_id:req.body.challengeID,
 		question_no:req.body.questionNo,
 		given_number:givenNumber,
-		is_Skip:isSkip,
-		file_name:fileName,
-		transcribe:response.data.text
+		is_skip:true,
+		file_name:"skipped",
+		transcribe:""
 	})
 	.then((result) => res.status(200).send(result[0]))
 	.catch((error)=>{
@@ -176,9 +160,20 @@ app.post('/saveQuestion',(req,res)=>{
 })
 
 
-app.get('/record',(req,res)=>{
-	console.log('app');
-	res.status(200).send("ok!!!"); 
+
+app.post('/getRecord',(req,res)=>{
+	console.log(req.body.challengeID);
+	db('question')
+		.returning(['question_no','given_number','transcribe','file_name','is_correct'])
+		.select('*')
+  		.where('challenge_id',req.body.challengeID)
+		.then(data => {
+			console.log(data);
+			res.status(200).send(data);
+		})
+		.catch((error)=>console.log("Failed select data from DB!",error))
+
+
 })
 
 
