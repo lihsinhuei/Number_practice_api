@@ -39,7 +39,7 @@ app.post('/signup',(req,res)=>{
 	 .returning(['user_id','username'])
 	 .insert({username:req.body.username ,email:req.body.email,password_hash:req.body.password})
 	 .then((result) => res.status(200).send(result[0]))
-	 .catch(()=>console.log("Insert db failed!"))
+	 .catch(()=>console.log("signup failed!"))
 })
 
 
@@ -54,7 +54,7 @@ app.post('/signin',(req,res)=>{
 	 		res.status(404).send('invalid email or password');
 	 	}
 	  })
-	 .catch(()=>res.status(404).send('selecting failed'))
+	 .catch(()=>res.status(404).send('signin selecting failed'))
 })
 
 
@@ -92,10 +92,12 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 		
 	transcribeAudio(req.file.originalname)
 		.then(response=>{
-			console.log("You said:",response.data.text);
+			//the response was from axios. To access the content, use response.data rather than response.body
+			console.log("You said:",response.data.text); 
 
-			//save data for this questionto DB 
-			db('question')
+			//save data to DB 
+			db('records')
+			.returning('record_id')
 			.insert({
 				challenge_id:req.body.challengeID,
 				question_no:req.body.questionNo,
@@ -104,15 +106,23 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 				file_name:req.file.originalname,
 				transcribe:response.data.text
 			})
-			.then((result) => res.status(200).send(result[0]))
+			.then((result) =>{
+				if(result.length==1){
+					console.log("the record was inserted");
+					res.status(response.status).send({
+						data:response.data.text  //the transcrip text property from OpenAI
+					});
+
+				}else{
+					console.log("inserted not correctly");
+					res.status(404).send("inserted not correctly");
+				}
+			})
 			.catch((error)=>console.log("Insert db failed!",error))
 
-			res.status(response.status).send({
-				data:response.data.text  //the transcrip text from OpenAI
-			})
 		})
 		.catch((error)=>{
-			console.log(error.response.status);
+			console.log(error);
 			res.status(404).send('unexpected error, failed handling audio');
 		})
 
@@ -142,8 +152,7 @@ app.post('/newChallenge',(req,res)=>{
 //not done yet!!!!don't skip quesions. also need to think about code duplication
 app.post('/skipQuestion',(req,res)=>{
 	//save data for this questionto DB 
-	db('question')
-	// .returning('challenge_id') 
+	db('records')
 	.insert({
 		challenge_id:req.body.challengeID,
 		question_no:req.body.questionNo,
@@ -159,16 +168,16 @@ app.post('/skipQuestion',(req,res)=>{
 	})
 })
 
-
-
+//
 app.post('/getRecord',(req,res)=>{
-	console.log(req.body.challengeID);
-	db('question')
+	console.log("challengeID:",req.body.challengeID);
+	db('records')
 		.returning(['question_no','given_number','transcribe','file_name','is_correct'])
 		.select('*')
   		.where('challenge_id',req.body.challengeID)
 		.then(data => {
 			console.log(data);
+			console.log("how many rows:",data.length);
 			res.status(200).send(data);
 		})
 		.catch((error)=>console.log("Failed select data from DB!",error))
