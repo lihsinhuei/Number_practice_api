@@ -24,7 +24,6 @@ const db = knex({
 });
 
 
-
 const app = express();
 app.use(cors())
 app.use(express.json()); // latest version of expressJS now comes with Body-Parser!
@@ -58,11 +57,13 @@ app.post('/signin',(req,res)=>{
 })
 
 
-
+// 1. save the data to disk; 
+// 2. read the file again and send it to OpenAI API; 
+// 3.get the transcribe from OpenAI API; 
+// 4. write the record to DB
 app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 
 	async function transcribeAudio(fileName){
-
 		fs.writeFileSync(fileName, req.file.buffer, 'base64',(err) => err && console.error(err));
 		console.log("file name is:",fileName);
 
@@ -125,21 +126,11 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 			console.log(error);
 			res.status(404).send('unexpected error, failed handling audio');
 		})
-
-
-// 	res.status(200).send('ok'); 
-//   //forgot what below codes do...... 
-//     req.on('end', () => {
-// 		res.send({
-//             headers: req.headers,
-//             data:response.data.text
-//         });
-//     });
-
 	
 })
 
 
+//add the a new challenge record to DB
 app.post('/newChallenge',(req,res)=>{
 	db('challenge')
 	 .returning('challenge_id')
@@ -168,9 +159,21 @@ app.post('/skipQuestion',(req,res)=>{
 	})
 })
 
-//
+//fetch all the records(each challenge includes 10 records) from DB to display on the page
 app.post('/getRecord',(req,res)=>{
 	console.log("challengeID:",req.body.challengeID);
+
+	const db2 = knex({
+		client: 'pg', //postgresql
+		connection: {
+		  host : '127.0.0.1',
+		  port : 5432,
+		  user : 'lihsinhuei',
+		  password : '',
+		  database : 'number_project'
+		}
+	  });
+
 	db('records')
 		.returning(['question_no','given_number','transcribe','file_name','is_correct'])
 		.select('*')
@@ -181,7 +184,6 @@ app.post('/getRecord',(req,res)=>{
 			res.status(200).send(data);
 		})
 		.catch((error)=>console.log("Failed select data from DB!",error))
-
 
 })
 
