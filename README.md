@@ -1,8 +1,9 @@
 This repo is for the back-end. For the front-end, please check [Number_practice_app](https://github.com/lihsinhuei/Number_practice_app) 
 
 # Demo
-Hi, I am working on this personal project, including front-end and back-end.\
-Because I haven't deployed it yet, I made this short video to demonstrate what this app can do for you to quickly grasp it.\
+Hi, this is my personal project, and I am working on both front-end and back-end.\
+Because it hasn't been done and deployed yet, I made this short video to demonstrate what this app can do for you to quickly grasp it.
+
 
 https://github.com/lihsinhuei/Number_practice_api/assets/34786915/f2f18db4-bccc-4c40-a02d-c54433bd790a
 
@@ -25,7 +26,7 @@ Sometimes, we go back to our native language, which isn't very helpful. That's w
 ⚡️ axios\
 ⚡️ knex\
 ⚡️ multer\
-⚡️ OpenAI Whisper API \
+⚡️ OpenAI Whisper API
 
 
 # Features(front-end):
