@@ -37,8 +37,14 @@ app.post('/signup',(req,res)=>{
 	db('users')
 	 .returning(['user_id','username'])
 	 .insert({username:req.body.username ,email:req.body.email,password_hash:req.body.password})
-	 .then((result) => res.status(200).send(result[0]))
-	 .catch(()=>console.log("signup failed!"))
+	 .then((result) => {
+		console.log("within signup");
+		res.status(200).json(result[0])
+	 })
+	 .catch((err)=>{
+		console.log("signup failed!error:",err);
+		res.status(400).json('unable to sign up')
+	 })
 })
 
 
@@ -79,7 +85,7 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 				file:audioFile,
 				model:"whisper-1",
 				language:'en',
-				temperature:0.8
+				temperature:0.2
 			},
 			{
 				headers:{
@@ -101,7 +107,7 @@ app.post('/processUserRecording',upload.single("blob"),(req,res)=>{
 			.returning('record_id')
 			.insert({
 				challenge_id:req.body.challengeID,
-				question_no:req.body.questionNo,
+				question_no:req.body.quizNo,
 				given_number:req.body.givenNumber,
 				is_skip:req.body.isSkip,
 				file_name:req.file.originalname,
@@ -146,7 +152,7 @@ app.post('/skipQuestion',(req,res)=>{
 	db('records')
 	.insert({
 		challenge_id:req.body.challengeID,
-		question_no:req.body.questionNo,
+		question_no:req.body.quizNo,
 		given_number:givenNumber,
 		is_skip:true,
 		file_name:"skipped",
