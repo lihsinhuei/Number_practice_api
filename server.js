@@ -1,14 +1,13 @@
 const express = require('express');
-const fs = require('fs');
+require('dotenv').config() //to access the variables in .env file(process.env)
+const port = 8080;
+const fs = require('fs'); 
 const cors = require('cors');
 const multer = require('multer');//a middleware to handle a formData object
 const knex = require('knex'); // a query builder for databases
 const OpenAI = require('openai');
-const promise =  require('promise');
-// const {toFile} = require("openai/uploads") ;
-// const { Readable } = require('stream'); 
-const axios = require("axios");
-require('dotenv').config() //package to access the variables in .env file(process.env)
+const axios = require("axios"); //a promise-based HTTP Client for node.js and the browser.
+const flash = require('connect-flash');
 
 
 
@@ -23,12 +22,71 @@ const db = knex({
   }
 });
 
-
 const app = express();
-app.use(cors())
+app.use(cors(
+	{
+	origin: 'http://localhost:3000',
+    methods: ["POST", "PUT", "GET", "OPTIONS", "HEAD"],
+    credentials: true,
+}
+))
 app.use(express.json()); // latest version of expressJS now comes with Body-Parser!
 const upload = multer();
 
+const redis = require('redis');
+const session = require('express-session');
+const RedisStore = require('connect-redis').default;
+
+const redisClient = redis.createClient();
+
+(async ()=>{
+
+	redisClient.on('error', (err) =>
+		console.log(`Fail to connect to redis. ${err}`)
+  	);
+  	redisClient.on('connect', () => console.log('Successfully connect to redis'));
+
+	  await redisClient.connect();
+})();
+
+
+
+
+app.use(
+	session({
+	  store: new RedisStore({ client: redisClient }),
+	  secret: process.env.secret,
+	  resave: false,
+	  saveUninitialized: false,
+	  cookie: {
+		SameSite: 'none',
+		secure: false,
+		maxAge: 1000 * 60 * 60 * 24 * 30 
+	  }	
+	})
+  )
+
+  app.use(flash())
+
+
+app.get('/', (req, res) => {
+console.log('req.session.isAuth:',req.session.isAuth);
+	//check if the user has logged in before
+	if (req.session.isAuth) {
+		var user={
+			username:req.session.username,
+			user_id:req.session.user_id,
+			email:req.session.email
+		}
+		res.status(200).json(user);
+	}else{
+			// const showInputError = req.flash('showInputError')[0] || false
+		// res.status(404).send(showInputError);
+		res.status(202).json("has not logged in before.");
+
+	}
+
+})
 
 app.post('/signup',(req,res)=>{
 	console.log(req.body.username);
@@ -53,14 +111,36 @@ app.post('/signin',(req,res)=>{
 	console.log(email);
 	db.select('*').from('users').where('email',email)
 	 .then(result=> {
+		console.log(result);
 	 	if(result[0].password_hash == req.body.password){
-	 		res.status(200).send(result[0]);
+			req.session.isAuth = true;
+			req.session.username = result[0].username;
+			req.session.user_id = result[0].user_id;
+			req.session.email=result[0].email;
+			console.log(req.session);
+	 		res.status(200).json(result[0]);
 	 	}else{
+			// req.flash('showInputError', true)
 	 		res.status(404).send('invalid email or password');
 	 	}
 	  })
-	 .catch(()=>res.status(404).send('signin selecting failed'))
+	 .catch(()=>{
+		// req.flash('showInputError', true);
+		res.status(404).send('signin selecting failed');
+	 })
 })
+
+
+app.post('/logout', (req, res) => {
+	console.log("logging out");
+	req.session.destroy((err) => {
+	  if (err) {
+		res.status(404).send('destroy session failed');
+	  }
+	})
+	res.clearCookie('connect.sid')
+	res.status(200).send('logged out');
+  })
 
 
 // 1. save the data to disk; 
@@ -147,23 +227,23 @@ app.post('/newChallenge',(req,res)=>{
 
 
 //not done yet!!!!don't skip quesions. also need to think about code duplication
-app.post('/skipQuestion',(req,res)=>{
-	//save data for this questionto DB 
-	db('records')
-	.insert({
-		challenge_id:req.body.challengeID,
-		question_no:req.body.quizNo,
-		given_number:givenNumber,
-		is_skip:true,
-		file_name:"skipped",
-		transcribe:""
-	})
-	.then((result) => res.status(200).send(result[0]))
-	.catch((error)=>{
-		console.log("Insert db failed!",error)
-		res.status(404).send("Insert db failed!")
-	})
-})
+// app.post('/skipQuestion',(req,res)=>{
+// 	//save data for this questionto DB 
+// 	db('records')
+// 	.insert({
+// 		challenge_id:req.body.challengeID,
+// 		question_no:req.body.quizNo,
+// 		given_number:givenNumber,
+// 		is_skip:true,
+// 		file_name:"skipped",
+// 		transcribe:""
+// 	})
+// 	.then((result) => res.status(200).send(result[0]))
+// 	.catch((error)=>{
+// 		console.log("Insert db failed!",error)
+// 		res.status(404).send("Insert db failed!")
+// 	})
+// })
 
 //fetch all the records(each challenge includes 10 records) from DB to display on the page
 app.post('/getRecord',(req,res)=>{
@@ -196,7 +276,7 @@ app.post('/getRecord',(req,res)=>{
 
 
 
-app.listen(3000, ()=> {
-  console.log('app is running on port 3000');
+app.listen(port, ()=> {
+  console.log('app is running on port:',port);
   db('users').count('user_id').returning().then(total=>console.log("Total users number:",total[0].count));
 })
