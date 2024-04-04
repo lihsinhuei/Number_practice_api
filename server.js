@@ -8,7 +8,8 @@ const knex = require('knex'); // a query builder for databases
 const OpenAI = require('openai');
 const axios = require("axios"); //a promise-based HTTP Client for node.js and the browser.
 const flash = require('connect-flash');
-
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 
 const db = knex({
@@ -55,7 +56,7 @@ const redisClient = redis.createClient();
 app.use(
 	session({
 	  store: new RedisStore({ client: redisClient }),
-	  secret: process.env.secret,
+	  secret: process.env.SECRET,
 	  resave: false,
 	  saveUninitialized: false,
 	  cookie: {
@@ -92,17 +93,35 @@ app.post('/signup',(req,res)=>{
 	console.log(req.body.username);
 	console.log(req.body.email);
 	console.log(req.body.password);
-	db('users')
-	 .returning(['user_id','username'])
-	 .insert({username:req.body.username ,email:req.body.email,password_hash:req.body.password})
-	 .then((result) => {
-		console.log("within signup");
-		res.status(200).json(result[0])
-	 })
-	 .catch((err)=>{
-		console.log("signup failed!error:",err);
-		res.status(400).json('unable to sign up')
-	 })
+
+	bcrypt.genSalt(saltRounds, function(err, salt) {
+		bcrypt.hash(req.body.password, salt, function(err, hash) {
+			console.log("password hash:",hash);
+			db('users')
+			.returning(['user_id','username'])
+			.insert({username:req.body.username ,email:req.body.email,password_hash:hash})
+			.then((result) => {
+				console.log("within signup");
+				res.status(200).json(result[0])
+			})
+			.catch((err)=>{
+				console.log("signup failed!error:",err);
+				res.status(400).json('unable to sign up')
+			})
+		});
+	});
+
+	// db('users')
+	//  .returning(['user_id','username'])
+	//  .insert({username:req.body.username ,email:req.body.email,password_hash:req.body.password})
+	//  .then((result) => {
+	// 	console.log("within signup");
+	// 	res.status(200).json(result[0])
+	//  })
+	//  .catch((err)=>{
+	// 	console.log("signup failed!error:",err);
+	// 	res.status(400).json('unable to sign up')
+	//  })
 })
 
 
@@ -110,19 +129,22 @@ app.post('/signin',(req,res)=>{
 	const email = req.body.email; 
 	console.log(email);
 	db.select('*').from('users').where('email',email)
-	 .then(result=> {
-		console.log(result);
-	 	if(result[0].password_hash == req.body.password){
-			req.session.isAuth = true;
-			req.session.username = result[0].username;
-			req.session.user_id = result[0].user_id;
-			req.session.email=result[0].email;
-			console.log(req.session);
-	 		res.status(200).json(result[0]);
-	 	}else{
-			// req.flash('showInputError', true)
-	 		res.status(404).send('invalid email or password');
-	 	}
+	 .then(user=> {
+		console.log(user);
+		bcrypt.compare(req.body.password, user[0].password_hash, function(err, result) {
+			if(result){
+				req.session.isAuth = true;
+				req.session.username = user[0].username;
+				req.session.user_id = user[0].user_id;
+				req.session.email=user[0].email;
+				console.log(req.session);
+				 res.status(200).json(user[0]);
+			 }else{
+				// req.flash('showInputError', true)
+				 res.status(404).send('invalid email or password');
+			 }
+		});
+	 	
 	  })
 	 .catch(()=>{
 		// req.flash('showInputError', true);
