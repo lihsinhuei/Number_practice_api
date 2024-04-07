@@ -57,7 +57,7 @@ app.use(
 	session({
 	  store: new RedisStore({ client: redisClient }),
 	  secret: process.env.SECRET,
-	  resave: false,
+	  resave: false,  //false for development, true for production
 	  saveUninitialized: false,
 	  cookie: {
 		SameSite: 'none',
@@ -81,8 +81,6 @@ console.log('req.session.isAuth:',req.session.isAuth);
 		}
 		res.status(200).json(user);
 	}else{
-			// const showInputError = req.flash('showInputError')[0] || false
-		// res.status(404).send(showInputError);
 		res.status(202).json("has not logged in before.");
 
 	}
@@ -94,34 +92,37 @@ app.post('/signup',(req,res)=>{
 	console.log(req.body.email);
 	console.log(req.body.password);
 
-	bcrypt.genSalt(saltRounds, function(err, salt) {
-		bcrypt.hash(req.body.password, salt, function(err, hash) {
-			console.log("password hash:",hash);
-			db('users')
-			.returning(['user_id','username'])
-			.insert({username:req.body.username ,email:req.body.email,password_hash:hash})
-			.then((result) => {
-				console.log("within signup");
-				res.status(200).json(result[0])
-			})
-			.catch((err)=>{
-				console.log("signup failed!error:",err);
-				res.status(400).json('unable to sign up')
-			})
-		});
-	});
+	db.select('email').from('users').where('email',req.body.email)
+	 .then(user=> {
+		if(user.length == 0){  //the email is not used 
+			bcrypt.genSalt(saltRounds, function(err, salt) {
+				bcrypt.hash(req.body.password, salt, function(err, hash) {
+					console.log("password hash:",hash);
+					db('users')
+					.returning(['user_id','username','email'])
+					.insert({username:req.body.username ,email:req.body.email,password_hash:hash})
+					.then((user) => {
+						req.session.isAuth = true;
+						req.session.username = user[0].username;
+						req.session.user_id = user[0].user_id;
+						req.session.email=user[0].email;
+						console.log(req.session);
+						res.status(200).json(user[0])
+					})
+					.catch((err)=>{
+						console.log("signup failed!error:",err);
+						req.flash('err',"something went wrong while registering, please try again.");
+						res.status(400).json('unable to sign up')
+					})
+				});
+			});
+		}else{ //the email is used 
+			console.log('This email address is already been registered.');
+			req.flash('info','This email address is already been registered. Please sign in');
+			res.status(202).send({message:req.flash('info')});
+		}
+	 })
 
-	// db('users')
-	//  .returning(['user_id','username'])
-	//  .insert({username:req.body.username ,email:req.body.email,password_hash:req.body.password})
-	//  .then((result) => {
-	// 	console.log("within signup");
-	// 	res.status(200).json(result[0])
-	//  })
-	//  .catch((err)=>{
-	// 	console.log("signup failed!error:",err);
-	// 	res.status(400).json('unable to sign up')
-	//  })
 })
 
 
@@ -133,6 +134,7 @@ app.post('/signin',(req,res)=>{
 		console.log(user);
 		bcrypt.compare(req.body.password, user[0].password_hash, function(err, result) {
 			if(result){
+				console.log('password correct, result:',result);
 				req.session.isAuth = true;
 				req.session.username = user[0].username;
 				req.session.user_id = user[0].user_id;
@@ -140,15 +142,16 @@ app.post('/signin',(req,res)=>{
 				console.log(req.session);
 				 res.status(200).json(user[0]);
 			 }else{
-				// req.flash('showInputError', true)
-				 res.status(404).send('invalid email or password');
+				console.log("password not correct, result:",result);
+				req.flash('error','invalid email or password');
+				res.status(202).send({message:req.flash('error')});
 			 }
 		});
 	 	
 	  })
 	 .catch(()=>{
 		// req.flash('showInputError', true);
-		res.status(404).send('signin selecting failed');
+		res.status(404).send('signin failed');
 	 })
 })
 
