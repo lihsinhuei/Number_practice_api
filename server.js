@@ -15,8 +15,8 @@ const saltRounds = 10;
 const db = knex({
   client: 'pg', //postgresql
   connection: {
-    host : process.env.postgresqlhost ||'127.0.0.1',
-    port : process.env.postgresqlport || 5432,
+    host : process.env.POSTGRESQL_HOST ||'127.0.0.1',
+    port : process.env.POSTGRESQL_PORT || 5432,
     user : 'lihsinhuei',
     password : '',
     database : 'number_project'
@@ -26,7 +26,7 @@ const db = knex({
 const app = express();
 app.use(cors(
 	{
-	origin: process.env.origin ||'http://localhost:3000',
+	origin: process.env.ORIGIN ||'http://localhost:3000',
     methods: ["POST", "PUT", "GET", "OPTIONS", "HEAD"],
     credentials: true,
 }
