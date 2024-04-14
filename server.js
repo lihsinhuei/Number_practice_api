@@ -1,6 +1,6 @@
 const express = require('express');
 require('dotenv').config() //to access the variables in .env file(process.env)
-const port = 8080;
+const port = process.env.PORT || 8080
 const fs = require('fs'); 
 const cors = require('cors');
 const multer = require('multer');//a middleware to handle a formData object
@@ -15,8 +15,8 @@ const saltRounds = 10;
 const db = knex({
   client: 'pg', //postgresql
   connection: {
-    host : '127.0.0.1',
-    port : 5432,
+    host : process.env.postgresqlhost ||'127.0.0.1',
+    port : process.env.postgresqlport || 5432,
     user : 'lihsinhuei',
     password : '',
     database : 'number_project'
@@ -26,7 +26,7 @@ const db = knex({
 const app = express();
 app.use(cors(
 	{
-	origin: 'http://localhost:3000',
+	origin: process.env.origin ||'http://localhost:3000',
     methods: ["POST", "PUT", "GET", "OPTIONS", "HEAD"],
     credentials: true,
 }
@@ -273,17 +273,6 @@ app.post('/newChallenge',(req,res)=>{
 //fetch all the records(each challenge includes 10 records) from DB to display on the page
 app.post('/getRecord',(req,res)=>{
 	console.log("challengeID:",req.body.challengeID);
-
-	const db2 = knex({
-		client: 'pg', //postgresql
-		connection: {
-		  host : '127.0.0.1',
-		  port : 5432,
-		  user : 'lihsinhuei',
-		  password : '',
-		  database : 'number_project'
-		}
-	  });
 
 	db('records')
 		.returning(['question_no','given_number','transcribe','file_name','is_correct'])
