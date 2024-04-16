@@ -12,11 +12,12 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
 
+
 const db = knex({
   client: 'pg', //postgresql
-  connection: {
-    host : process.env.POSTGRESQL_HOST ||'127.0.0.1',
-    port : process.env.POSTGRESQL_PORT || 5432,
+  connection: process.env.DATABASE_URL || {
+    host : '127.0.0.1',
+    port : 5432,
     user : 'lihsinhuei',
     password : '',
     database : 'number_project'
@@ -38,7 +39,15 @@ const redis = require('redis');
 const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 
-const redisClient = redis.createClient();
+const redisClient = process.env.REDISCLOUD_URL ?
+	redis.createClient({
+		url: process.env.REDISCLOUD_URL,
+		socket: {
+		tls: true,
+		rejectUnauthorized: false,
+		}
+	}) 
+	: redis.createClient(); //default:connect to localhost on port 6379.
 
 (async ()=>{
 
