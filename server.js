@@ -11,7 +11,7 @@ const flash = require('connect-flash');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
-
+console.log(process.env.NODE_ENV);
 
 const db = knex({
   client: 'pg', //postgresql
@@ -52,8 +52,8 @@ const redisClient = process.env.REDISCLOUD_URL ?
 	redis.createClient({
 		url: process.env.REDISCLOUD_URL,
 		socket: {
-		tls: true,
-		rejectUnauthorized: false,
+			tls: true,
+			rejectUnauthorized: false,
 		}
 		// tls: {
 		// 	rejectUnauthorized: false,
@@ -78,7 +78,7 @@ app.use(
 	session({
 	  store: new RedisStore({ client: redisClient }),
 	  secret: process.env.SECRET, 
-	  resave: process.env.NODE_ENV=="production"? true: false,  //false for development, true for production
+	  resave: process.env.NODE_ENV==="production"? true: false,  //false for development, true for production
 	  saveUninitialized: false,
 	  cookie: {
 		SameSite: 'none',
