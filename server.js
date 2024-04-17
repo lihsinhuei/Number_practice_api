@@ -51,10 +51,13 @@ const RedisStore = require('connect-redis').default;
 const redisClient = process.env.REDISCLOUD_URL ?
 	redis.createClient({
 		url: process.env.REDISCLOUD_URL,
-		socket: {
-		tls: true,
-		rejectUnauthorized: false,
-		}
+		// socket: {
+		// tls: true,
+		// rejectUnauthorized: false,
+		// }
+		tls: {
+			rejectUnauthorized: false,
+		  },
 	}) 
 	: redis.createClient(); //default:connect to localhost on port 6379.
 
