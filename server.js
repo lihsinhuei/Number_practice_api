@@ -77,8 +77,8 @@ const redisClient = process.env.REDISCLOUD_URL ?
 app.use(
 	session({
 	  store: new RedisStore({ client: redisClient }),
-	  secret: process.env.SECRET,
-	  resave: process.env.NODE_ENV==prduction? true: false,  //false for development, true for production
+	  secret: process.env.SECRET, 
+	  resave: process.env.NODE_ENV=="production"? true: false,  //false for development, true for production
 	  saveUninitialized: false,
 	  cookie: {
 		SameSite: 'none',
