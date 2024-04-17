@@ -11,7 +11,7 @@ const flash = require('connect-flash');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
-console.log(process.env.NODE_ENV);
+
 
 const db = knex({
   client: 'pg', //postgresql
@@ -313,5 +313,6 @@ app.post('/getRecord',(req,res)=>{
 
 app.listen(port, ()=> {
   console.log('app is running on port:',port);
+  console.log("NODE_ENV:",process.env.NODE_ENV);
   db('users').count('user_id').returning().then(total=>console.log("Total users number:",total[0].count));
 })
