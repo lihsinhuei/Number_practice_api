@@ -15,7 +15,16 @@ const saltRounds = 10;
 
 const db = knex({
   client: 'pg', //postgresql
-  connection: process.env.DATABASE_URL+'?sslmode=require' || {
+  connection: process.env.DATABASE_URL ? {
+    host : process.env.DATABASE_HOST,
+    port : process.env.DATABASE_PORT,
+    user : process.env.DATABASE_USER,
+    password : process.env.DATABASE_PASSWORD,
+    database : process.env.DATABASE_NAME,
+	SSL:true
+  } 
+  : 
+  {
     host : '127.0.0.1',
     port : 5432,
     user : 'lihsinhuei',
