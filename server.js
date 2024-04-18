@@ -48,16 +48,13 @@ const redis = require('redis');
 const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 
-const redisClient = process.env.REDISCLOUD_URL ?
+const redisClient = process.env.REDIS_URL ?
 	redis.createClient({
-		url: process.env.REDISCLOUD_URL,
+		url: process.env.REDIS_URL,
 		socket: {
 			tls: true,
 			rejectUnauthorized: false,
 		}
-		// tls: {
-		// 	rejectUnauthorized: false,
-		//   },
 	}) 
 	: redis.createClient(); //default:connect to localhost on port 6379.
 
