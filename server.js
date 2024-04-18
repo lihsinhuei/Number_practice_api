@@ -48,9 +48,9 @@ const redis = require('redis');
 const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 
-const redisClient = process.env.REDIS_URL ?
+const redisClient = process.env.REDIS_TLS_URL ?
 	redis.createClient({
-		url: process.env.REDIS_URL,
+		url: process.env.REDIS_TLS_URL,
 		socket: {
 			tls: true,
 			rejectUnauthorized: false,
