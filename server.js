@@ -75,7 +75,8 @@ app.use(
 	session({
 	  store: new RedisStore({ client: redisClient }),
 	  secret: process.env.SECRET, 
-	  resave: false,  
+	  resave: true,  
+	  saveUninitialized: false,
 	  cookie: {
 		SameSite: 'none',
 		secure: process.env.NODE_ENV==="production"? true: false,
@@ -148,26 +149,31 @@ app.post('/signin',(req,res)=>{
 	console.log(email);
 	db.select('*').from('users').where('email',email)
 	 .then(user=> {
-		console.log("user info from DB:",user);
-		bcrypt.compare(req.body.password, user[0].password_hash, function(err, result) {
-			if(result){
-				console.log('password correct, result:',result);
-				req.session.isAuth = true;
-				req.session.username = user[0].username;
-				req.session.user_id = user[0].user_id;
-				req.session.email=user[0].email;
-				console.log(req.session);
-				 res.status(200).json(user[0]);
-			 }else{
-				console.log("password not correct, result:",result);
-				req.flash('error','invalid email or password');
-				res.status(202).send({message:req.flash('error')});
-			 }
-		});
-	 	
+		if(user.length===0){
+			console.log("User is not exist");
+			req.flash('error','User is not exist');
+			res.status(202).send({message:req.flash('error')});
+		}else{
+			console.log("user info from DB:",user);
+			bcrypt.compare(req.body.password, user[0].password_hash, function(err, result) {
+				if(result){
+					console.log('password correct, result:',result);
+					req.session.isAuth = true;
+					req.session.username = user[0].username;
+					req.session.user_id = user[0].user_id;
+					req.session.email=user[0].email;
+					console.log(req.session);
+					 res.status(200).json(user[0]);
+				 }else{
+					console.log("password not correct, result:",result);
+					req.flash('error','invalid email or password');
+					res.status(202).send({message:req.flash('error')});
+				 }
+			});
+		}
 	  })
-	 .catch(()=>{
-		// req.flash('showInputError', true);
+	 .catch((err)=>{
+		console.log("Something went wrong while login.");
 		res.status(404).send('signin failed');
 	 })
 })
