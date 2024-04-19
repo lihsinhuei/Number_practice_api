@@ -48,7 +48,7 @@ const redis = require('redis');
 const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 
-const redisClient = process.env.REDIS_TLS_URL ?
+const redisClient = process.env.REDIS_TLS_URL ? //coonection failed if REDIS_URL is used
 	redis.createClient({
 		url: process.env.REDIS_TLS_URL,
 		socket: {
@@ -75,11 +75,10 @@ app.use(
 	session({
 	  store: new RedisStore({ client: redisClient }),
 	  secret: process.env.SECRET, 
-	  resave: process.env.NODE_ENV==="production"? true: false,  //false for development, true for production
-	  saveUninitialized: false,
+	  resave: false,  
 	  cookie: {
 		SameSite: 'none',
-		secure: false,
+		secure: process.env.NODE_ENV==="production"? true: false,
 		maxAge: 1000 * 60 * 60 * 24 * 30 
 	  }	
 	})
@@ -149,7 +148,7 @@ app.post('/signin',(req,res)=>{
 	console.log(email);
 	db.select('*').from('users').where('email',email)
 	 .then(user=> {
-		console.log(user);
+		console.log("user info from DB:",user);
 		bcrypt.compare(req.body.password, user[0].password_hash, function(err, result) {
 			if(result){
 				console.log('password correct, result:',result);
