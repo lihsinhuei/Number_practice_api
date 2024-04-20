@@ -1,9 +1,9 @@
-This repo is for the back-end. For the front-end, please check [Number_practice_app](https://github.com/lihsinhuei/Number_practice_app) 
+This repo is for the back-end.[Front-end repo](https://github.com/lihsinhuei/Number_practice_app) 
 
 # Demo
 Hi, this is my personal project, and I am working on both front-end and back-end, using React.js and Node.js.\
-It's been deployed on Heroku, please check it out and give it a try. 
-[https://github.com/lihsinhuei/Number_practice_app](https://number-challenge-896fe99ec04b.herokuapp.com/)) 
+It's been deployed on Heroku [Live demo](https://number-challenge-896fe99ec04b.herokuapp.com/)) , please check it out and give it a try. 
+
 
 Restricts: 
 - Recording can only function on desktops for now, will make it work on mobile device in the future. 
