@@ -6,8 +6,8 @@ It's been deployed on Heroku [Live demo](https://number-challenge-896fe99ec04b.h
 
 
 Restricts: 
-- Recording can only function on desktops for now, will make it work on mobile device in the future. 
-- herokuapp.com cookies can not be set in most browser because this domain is included in the Mozilla Foundation’s Public Suffix List.  
+- Recording can only function on desktops for now, will make it work on mobile devices in the future. 
+- herokuapp.com cookies can not be set in most browsers because this domain is included in the Mozilla Foundation’s Public Suffix List.To fix this, will need to either using a custom domain or deploying it on anotehr service.   
 
 # Idea
 I designed it to help people learning English get better at speaking numbers. 
