@@ -7,9 +7,12 @@ const multer = require('multer');//a middleware to handle a formData object
 const knex = require('knex'); // a query builder for databases
 const OpenAI = require('openai');
 const axios = require("axios"); //a promise-based HTTP Client for node.js and the browser.
-const flash = require('connect-flash');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+const redis = require('redis');
+const session = require('express-session');
+const RedisStore = require('connect-redis').default;
+const flash = require('connect-flash');
 
 
 
@@ -44,9 +47,7 @@ app.use(cors(
 app.use(express.json()); // latest version of expressJS now comes with Body-Parser!
 const upload = multer();
 
-const redis = require('redis');
-const session = require('express-session');
-const RedisStore = require('connect-redis').default;
+
 
 const redisClient = process.env.REDIS_TLS_URL ? //coonection failed if REDIS_URL is used
 	redis.createClient({
